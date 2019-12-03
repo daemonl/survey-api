@@ -5,18 +5,56 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/daemonl/registerapi/surveys"
 	"github.com/gorilla/mux"
 )
 
-type Deps struct{}
+type Deps struct {
+	SurveyStore interface {
+		AddSurveyResponse(surveys.Response) (*surveys.StoredResponse, error)
+	}
+}
 
 func BuildRouter(deps Deps) http.Handler {
 	r := mux.NewRouter()
+
 	r.Methods("GET").Path("/up").Handler(JSONWrap(upHandler))
+
+	r.Methods("POST").Path("/responses").Handler(
+		JSONWrap(
+			buildAddResponseHandler(deps.SurveyStore),
+		),
+	)
+
 	r.NotFoundHandler = JSONWrap(func(req *http.Request) (interface{}, error) {
 		return nil, simpleError(404, "Not Found")
 	})
 	return r
+}
+
+func buildAddResponseHandler(responseStore interface {
+	AddSurveyResponse(surveys.Response) (*surveys.StoredResponse, error)
+}) func(req *http.Request) (interface{}, error) {
+	return func(req *http.Request) (interface{}, error) {
+		surveyResponse := surveys.Response{}
+		if err := json.NewDecoder(req.Body).Decode(&surveyResponse); err != nil {
+			return nil, err
+		}
+
+		if validationResponse := surveyResponse.Validate(); validationResponse != nil {
+			return nil, simpleErrorResponse{
+				code: 400,
+				body: validationResponse,
+			}
+		}
+
+		storedResponse, err := responseStore.AddSurveyResponse(surveyResponse)
+		if err != nil {
+			return nil, err
+		}
+
+		return storedResponse, nil
+	}
 }
 
 func upHandler(req *http.Request) (interface{}, error) {

@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-var reRangeError = regexp.MustCompile("Must be from [0-9]+ to [0-9]+")
+var reRangeError = regexp.MustCompile("Must be between [0-9]+ and [0-9]+")
 
 func TestResponseValidate(t *testing.T) {
 
@@ -28,7 +28,7 @@ func TestResponseValidate(t *testing.T) {
 			for key, reMatcher := range tc.expect {
 				if gotVal, gotOk := got[key]; !gotOk {
 					t.Errorf("Missing key %s in response", key)
-				} else if reMatcher.MatchString(gotVal) {
+				} else if !reMatcher.MatchString(gotVal) {
 					t.Errorf("At key %s, got %s", key, gotVal)
 				}
 			}

@@ -28,6 +28,11 @@ type Response struct {
 	Age     int                       `json:"age"`
 }
 
+type StoredResponse struct {
+	ID string `json:"id"`
+	Response
+}
+
 func rangeError(min, max int) string {
 	return fmt.Sprintf("Must be between %d and %d", min, max)
 }
