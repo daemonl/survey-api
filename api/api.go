@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -12,6 +13,9 @@ type Deps struct{}
 func BuildRouter(deps Deps) http.Handler {
 	r := mux.NewRouter()
 	r.Methods("GET").Path("/up").Handler(JSONWrap(upHandler))
+	r.NotFoundHandler = JSONWrap(func(req *http.Request) (interface{}, error) {
+		return nil, simpleError(404, "Not Found")
+	})
 	return r
 }
 
@@ -19,6 +23,36 @@ func upHandler(req *http.Request) (interface{}, error) {
 	return map[string]interface{}{
 		"status": "OK",
 	}, nil
+}
+
+func simpleError(code int, text string) HTTPErrorResponse {
+	return simpleErrorResponse{
+		code: code,
+		body: map[string]interface{}{
+			"status": text,
+		},
+	}
+}
+
+type simpleErrorResponse struct {
+	code int
+	body interface{}
+}
+
+func (sr simpleErrorResponse) HTTPStatus() int {
+	return sr.code
+}
+func (sr simpleErrorResponse) HTTPBody() interface{} {
+	return sr.body
+}
+
+func (sr simpleErrorResponse) Error() string {
+	return fmt.Sprintf("HTTP %d", sr.code)
+}
+
+type HTTPErrorResponse interface {
+	error
+	HTTPResponse
 }
 
 type HTTPResponse interface {
