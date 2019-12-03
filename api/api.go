@@ -15,7 +15,7 @@ type Deps struct {
 	}
 }
 
-func BuildRouter(deps Deps) http.Handler {
+func BuildRouter(deps *Deps) http.Handler {
 	r := mux.NewRouter()
 
 	r.Methods("GET").Path("/up").Handler(JSONWrap(upHandler))
