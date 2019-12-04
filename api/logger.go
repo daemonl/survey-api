@@ -15,7 +15,6 @@ func requestLogger(next http.Handler) http.Handler {
 		}
 		next.ServeHTTP(recorder, req)
 		log.Printf("%s %s => %d in %f seconds", req.Method, req.URL.Path, recorder.status, time.Since(begin).Seconds())
-
 	})
 }
 

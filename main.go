@@ -2,9 +2,14 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
+	"net/url"
+	"strings"
 
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/daemonl/survey-api/api"
 	"github.com/daemonl/survey-api/awssecret"
 	"github.com/daemonl/survey-api/surveys"
@@ -16,9 +21,9 @@ import (
 )
 
 var config struct {
-	Bind      string `env:"BIND" default:":80"`
-	MongoURL  string `env:"MONGO_DB_URL" default:"mongodb://localhost:27017"`
-	MongoName string `env:"MONGO_DB_NAME" default:"surveys"`
+	Bind string `env:"BIND" default:":80"`
+
+	DataStore string `env:"DATA_STORE_URL" default:"mongodb://localhost:27017/surveys"`
 }
 
 func main() {
@@ -34,13 +39,38 @@ func main() {
 }
 
 func serve() error {
-	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(config.MongoURL))
+	dataStoreURL, err := url.Parse(strings.Split(config.DataStore, ",")[0])
 	if err != nil {
-		return err
+		return fmt.Errorf("Invalid DATA_STORE_URL: %s", config.DataStore)
 	}
-	defer client.Disconnect(context.TODO())
 
-	surveyStore := surveys.NewStore(client, config.MongoName)
+	var surveyStore api.SurveyStore
+
+	switch dataStoreURL.Scheme {
+	case "mongodb":
+		client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(config.DataStore))
+		if err != nil {
+			return err
+		}
+		defer client.Disconnect(context.TODO())
+
+		surveyStore = surveys.NewMongoStore(client, dataStoreURL.Path[1:]) // Drops the `/`
+
+	case "s3":
+		if dataStoreURL.Path != "/" {
+			return fmt.Errorf("No path prefix is supported for S3")
+		}
+		sess, err := session.NewSession()
+		if err != nil {
+			return err
+		}
+		service := s3.New(sess)
+		log.Printf("S3 Store in %s", dataStoreURL.Host)
+		surveyStore = surveys.NewS3Store(service, dataStoreURL.Host)
+
+	default:
+		return fmt.Errorf("Must set a DATA_STORE_URL of either mongodb or s3")
+	}
 
 	router := api.BuildRouter(&api.Deps{
 		SurveyStore: surveyStore,

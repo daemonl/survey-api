@@ -10,13 +10,13 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-type Store struct {
+type MongoStore struct {
 	client *mongo.Client
 	dbName string
 }
 
-func NewStore(client *mongo.Client, dbName string) *Store {
-	return &Store{
+func NewMongoStore(client *mongo.Client, dbName string) *MongoStore {
+	return &MongoStore{
 		client: client,
 		dbName: dbName,
 	}
@@ -24,11 +24,11 @@ func NewStore(client *mongo.Client, dbName string) *Store {
 
 var NotFoundError = errors.New("Not Found")
 
-func (s *Store) db() *mongo.Database {
+func (s *MongoStore) db() *mongo.Database {
 	return s.client.Database(s.dbName)
 }
 
-func (s *Store) AddSurveyResponse(ctx context.Context, entry Response) (*StoredResponse, error) {
+func (s *MongoStore) AddSurveyResponse(ctx context.Context, entry Response) (*StoredResponse, error) {
 	id := uuid.New()
 	stored := &StoredResponse{
 		Response: entry,
@@ -43,7 +43,7 @@ func (s *Store) AddSurveyResponse(ctx context.Context, entry Response) (*StoredR
 	return stored, nil
 }
 
-func (s *Store) GetSurveyResponse(ctx context.Context, id string) (*StoredResponse, error) {
+func (s *MongoStore) GetSurveyResponse(ctx context.Context, id string) (*StoredResponse, error) {
 	row := s.db().Collection("surveys").FindOne(ctx, bson.M{
 		"_id": id,
 	})
@@ -61,7 +61,7 @@ type Stats struct {
 	Count int64 `json:"count"`
 }
 
-func (s *Store) GetStats(ctx context.Context) (*Stats, error) {
+func (s *MongoStore) GetStats(ctx context.Context) (*Stats, error) {
 	// Could be more interesting results like how many people like dogs
 	stats := &Stats{}
 	var err error

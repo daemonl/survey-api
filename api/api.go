@@ -10,12 +10,14 @@ import (
 	"github.com/gorilla/mux"
 )
 
+type SurveyStore interface {
+	AddSurveyResponse(context.Context, surveys.Response) (*surveys.StoredResponse, error)
+	GetSurveyResponse(context.Context, string) (*surveys.StoredResponse, error)
+	GetStats(context.Context) (*surveys.Stats, error)
+}
+
 type Deps struct {
-	SurveyStore interface {
-		AddSurveyResponse(context.Context, surveys.Response) (*surveys.StoredResponse, error)
-		GetSurveyResponse(context.Context, string) (*surveys.StoredResponse, error)
-		GetStats(context.Context) (*surveys.Stats, error)
-	}
+	SurveyStore SurveyStore
 }
 
 func BuildRouter(deps *Deps) http.Handler {
