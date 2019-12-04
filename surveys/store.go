@@ -7,16 +7,22 @@ import (
 )
 
 type Store struct {
-	mgo mongo.Client
+	client *mongo.Client
+}
+
+func NewStore(client *mongo.Client) *Store {
+	return &Store{
+		client: client,
+	}
 }
 
 var todo = errors.New("TODO")
 
-func (s *Store) AddSurveyResponse(entry Response) error {
-	return todo
+func (s *Store) AddSurveyResponse(entry Response) (*StoredResponse, error) {
+	return nil, todo
 }
 
-func (s *Store) GetSurveyResponse(id string) (*Response, error) {
+func (s *Store) GetSurveyResponse(id string) (*StoredResponse, error) {
 	return nil, todo
 
 }

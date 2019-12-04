@@ -3,6 +3,8 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"io"
+	"log"
 	"net/http"
 
 	"github.com/daemonl/registerapi/surveys"
@@ -32,12 +34,22 @@ func BuildRouter(deps *Deps) http.Handler {
 	return r
 }
 
+func parseRequest(req *http.Request, into interface{}) error {
+	err := json.NewDecoder(req.Body).Decode(into)
+	if err == nil {
+		return nil
+	}
+	if err == io.EOF {
+		return simpleError(400, "Body is required")
+	}
+	return err
+}
 func buildAddResponseHandler(responseStore interface {
 	AddSurveyResponse(surveys.Response) (*surveys.StoredResponse, error)
 }) func(req *http.Request) (interface{}, error) {
 	return func(req *http.Request) (interface{}, error) {
 		surveyResponse := surveys.Response{}
-		if err := json.NewDecoder(req.Body).Decode(&surveyResponse); err != nil {
+		if err := parseRequest(req, &surveyResponse); err != nil {
 			return nil, err
 		}
 
@@ -106,6 +118,7 @@ func JSONWrap(handler func(req *http.Request) (interface{}, error)) http.Handler
 				doJSONResponse(rw, httpResp.HTTPStatus(), httpResp.HTTPBody())
 				return
 			}
+			log.Printf("Unhandled: %s", err.Error())
 			doJSONResponse(rw, 500, map[string]interface{}{
 				"error": "Internal Server Error",
 			})
