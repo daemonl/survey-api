@@ -26,14 +26,7 @@ func (ms *MockStore) AddSurveyResponse(ctx context.Context, resp surveys.Respons
 
 func TestRouter(t *testing.T) {
 	deps := &Deps{}
-	surveyStore := &MockStore{}
-	surveyStore.Mock.Test(t)
-	deps.SurveyStore = surveyStore
 	router := BuildRouter(deps)
-
-	reset := func() {
-		surveyStore.Mock = mock.Mock{}
-	}
 
 	do := func(method, path string, body interface{}) *httptest.ResponseRecorder {
 		rw := httptest.NewRecorder()
@@ -58,65 +51,88 @@ func TestRouter(t *testing.T) {
 	if res := do("GET", "/frobnork", nil); res.Code != 404 {
 		t.Errorf("/frobnork status %d, looking for not found", res.Code)
 	}
+}
 
-	t.Run("Add Response", func(t *testing.T) {
-		defer surveyStore.AssertExpectations(t)
-		defer reset()
+func jsonRead(obj interface{}) io.Reader {
+	jsonBytes, _ := json.Marshal(obj)
+	return bytes.NewReader(jsonBytes)
+}
 
-		surveyStore.On("AddSurveyResponse", mock.Anything).
-			Once().
-			Return(&surveys.StoredResponse{
-				ID: "storedID",
-				Response: surveys.Response{
-					Age: 10,
-				},
-			}, nil)
+func jsonConvertType(in interface{}, out interface{}) {
+	resBody, err := json.Marshal(in)
+	if err != nil {
+		panic(err.Error())
+	}
+	if err := json.Unmarshal(resBody, out); err != nil {
+		panic(err.Error())
+	}
+}
 
-		res := do("POST", "/responses", surveys.Response{
+func jsonMapType(in interface{}) map[string]interface{} {
+	out := make(map[string]interface{})
+	jsonConvertType(in, &out)
+	return out
+}
+
+func TestAddResponseHappy(t *testing.T) {
+	surveyStore := &MockStore{}
+	surveyStore.Mock.Test(t)
+	defer surveyStore.AssertExpectations(t)
+
+	surveyStore.On("AddSurveyResponse", mock.Anything).
+		Once().
+		Return(&surveys.StoredResponse{
+			ID: "storedID",
+			Response: surveys.Response{
+				Age: 10,
+			},
+		}, nil)
+
+	handler := buildAddResponseHandler(surveyStore)
+
+	gotResRaw, err := handler(httptest.NewRequest("POST", "/responses", jsonRead(
+		surveys.Response{
 			Age: 10,
 			Animals: map[string]surveys.AnimalResponse{
 				"dog": {Rating: 10, Owned: 50},
 			},
-		})
-		if res.Code != 200 {
-			t.Fatalf("POST /responses status %d", res.Code)
-		}
-		gotRes := &surveys.StoredResponse{}
-		if err := json.NewDecoder(res.Body).Decode(gotRes); err != nil {
-			t.Fatal(err.Error())
-		}
-		if gotRes.ID != "storedID" {
-			t.Errorf("ID: %s", gotRes.ID)
-		}
-		if gotRes.Age != 10 {
-			t.Errorf("Age: %d", gotRes.Age)
-		}
-	})
+		})))
+	if err != nil {
+		t.Fatal(err.Error())
+	}
 
-	t.Run("Validation Error", func(t *testing.T) {
-		defer surveyStore.AssertExpectations(t)
-		defer reset()
+	gotRes := jsonMapType(gotResRaw)
 
-		surveyStore.On("AddSurveyResponse", mock.Anything).
-			Once().
-			Return(&surveys.StoredResponse{
-				ID: "storedID",
-				Response: surveys.Response{
-					Age: 10,
-				},
-			}, nil)
+	if gotRes["id"] != "storedID" {
+		t.Errorf("ID: %s", gotRes["id"])
+	}
+	if gotRes["age"] != 10.0 {
+		t.Errorf("Age: %d", gotRes["age"])
+	}
 
-		res := do("POST", "/responses", surveys.Response{Age: -1})
-		if res.Code != 400 {
-			t.Fatalf("POST /responses status %d", res.Code)
-		}
+}
+func TestAddResponseInvalid(t *testing.T) {
 
-		gotRes := map[string]string{}
-		if err := json.NewDecoder(res.Body).Decode(&gotRes); err != nil {
-			t.Fatal(err.Error())
-		}
-		if _, ok := gotRes["age"]; !ok {
-			t.Errorf("Expecting an error for age, got none")
-		}
-	})
+	handler := buildAddResponseHandler(nil)
+
+	_, err := handler(httptest.NewRequest("POST", "/responses", jsonRead(
+		surveys.Response{Age: -1}),
+	))
+	if err == nil {
+		t.Fatal("Expected an error")
+	}
+
+	httpResp, ok := err.(HTTPResponse)
+	if !ok {
+		t.Fatalf("Bad error type: %T", err)
+	}
+
+	if httpResp.HTTPStatus() != 400 {
+		t.Fatalf("POST /responses status %d", httpResp.HTTPStatus())
+	}
+
+	gotRes := jsonMapType(httpResp.HTTPBody())
+	if _, ok := gotRes["age"]; !ok {
+		t.Errorf("Expecting an error for age, got none: %#v", gotRes)
+	}
 }

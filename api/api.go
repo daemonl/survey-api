@@ -15,6 +15,8 @@ import (
 type Deps struct {
 	SurveyStore interface {
 		AddSurveyResponse(context.Context, surveys.Response) (*surveys.StoredResponse, error)
+		GetSurveyResponse(context.Context, string) (*surveys.StoredResponse, error)
+		GetStats(context.Context) (*surveys.Stats, error)
 	}
 }
 
@@ -45,6 +47,7 @@ func parseRequest(req *http.Request, into interface{}) error {
 	}
 	return err
 }
+
 func buildAddResponseHandler(responseStore interface {
 	AddSurveyResponse(context.Context, surveys.Response) (*surveys.StoredResponse, error)
 }) func(req *http.Request) (interface{}, error) {
@@ -61,12 +64,26 @@ func buildAddResponseHandler(responseStore interface {
 			}
 		}
 
-		storedResponse, err := responseStore.AddSurveyResponse(req.Context(), surveyResponse)
-		if err != nil {
-			return nil, err
-		}
+		return responseStore.AddSurveyResponse(req.Context(), surveyResponse)
+	}
+}
 
-		return storedResponse, nil
+func buildGetResponseHandler(responseStore interface {
+	GetSurveyResponse(context.Context, string) (*surveys.StoredResponse, error)
+}) func(req *http.Request) (interface{}, error) {
+
+	return func(req *http.Request) (interface{}, error) {
+		responseID := mux.Vars(req)["response"]
+		return responseStore.GetSurveyResponse(req.Context(), responseID)
+	}
+}
+
+func buildGetStatsHandler(responseStore interface {
+	GetStats(context.Context) (*surveys.Stats, error)
+}) func(req *http.Request) (interface{}, error) {
+
+	return func(req *http.Request) (interface{}, error) {
+		return responseStore.GetStats(req.Context())
 	}
 }
 

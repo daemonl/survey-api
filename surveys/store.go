@@ -37,13 +37,13 @@ func (s *Store) AddSurveyResponse(ctx context.Context, entry Response) (*StoredR
 	return stored, nil
 }
 
-func (s *Store) GetSurveyResponse(id string) (*StoredResponse, error) {
+func (s *Store) GetSurveyResponse(ctx context.Context, id string) (*StoredResponse, error) {
 	return nil, todo
 
 }
 
 type Stats struct{}
 
-func (s *Store) GetStats() (*Stats, error) {
+func (s *Store) GetStats(ctx context.Context) (*Stats, error) {
 	return nil, todo
 }
