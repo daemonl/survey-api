@@ -3,8 +3,10 @@ package surveys
 import (
 	"context"
 	"errors"
+
 	"github.com/pborman/uuid"
 
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -22,6 +24,10 @@ func NewStore(client *mongo.Client, dbName string) *Store {
 
 var todo = errors.New("TODO")
 
+func (s *Store) db() *mongo.Database {
+	return s.client.Database(s.dbName)
+}
+
 func (s *Store) AddSurveyResponse(ctx context.Context, entry Response) (*StoredResponse, error) {
 	id := uuid.New()
 	stored := &StoredResponse{
@@ -29,7 +35,7 @@ func (s *Store) AddSurveyResponse(ctx context.Context, entry Response) (*StoredR
 		ID:       id,
 	}
 
-	_, err := s.client.Database(s.dbName).Collection("surveys").InsertOne(ctx, stored)
+	_, err := s.db().Collection("surveys").InsertOne(ctx, stored)
 	if err != nil {
 		return nil, err
 	}
@@ -38,12 +44,22 @@ func (s *Store) AddSurveyResponse(ctx context.Context, entry Response) (*StoredR
 }
 
 func (s *Store) GetSurveyResponse(ctx context.Context, id string) (*StoredResponse, error) {
-	return nil, todo
-
+	row := s.db().Collection("surveys").FindOne(ctx, bson.M{
+		"_id": id,
+	})
+	if err := row.Err(); err != nil {
+		return nil, err
+	}
+	resp := &StoredResponse{}
+	return resp, row.Decode(resp)
 }
 
-type Stats struct{}
+type Stats struct {
+	Count int64 `json:"count"`
+}
 
 func (s *Store) GetStats(ctx context.Context) (*Stats, error) {
-	return nil, todo
+	//row := s.db().Collection("surveys").Aggregate(ctx)
+	stats := &Stats{}
+	return stats, nil
 }

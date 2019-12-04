@@ -34,6 +34,14 @@ func (ms *MockStore) GetSurveyResponse(ctx context.Context, id string) (*surveys
 	return args.Get(0).(*surveys.StoredResponse), nil
 }
 
+func (ms *MockStore) GetStats(ctx context.Context) (*surveys.Stats, error) {
+	args := ms.Called()
+	if err := args.Error(1); err != nil {
+		return nil, err
+	}
+	return args.Get(0).(*surveys.Stats), nil
+}
+
 func TestRouter(t *testing.T) {
 	deps := &Deps{}
 	router := BuildRouter(deps)
@@ -148,7 +156,6 @@ func TestAddResponseInvalid(t *testing.T) {
 }
 
 func TestGetResponseHappy(t *testing.T) {
-
 	surveyStore := &MockStore{}
 	surveyStore.Mock.Test(t)
 	defer surveyStore.AssertExpectations(t)
@@ -177,5 +184,30 @@ func TestGetResponseHappy(t *testing.T) {
 	}
 	if gotRes["age"] != 10.0 {
 		t.Errorf("Age: %d", gotRes["age"])
+	}
+}
+
+func TestGetStatsHappy(t *testing.T) {
+	surveyStore := &MockStore{}
+	surveyStore.Mock.Test(t)
+	defer surveyStore.AssertExpectations(t)
+
+	surveyStore.On("GetStats").
+		Once().
+		Return(&surveys.Stats{
+			Count: 123,
+		}, nil)
+
+	handler := buildGetStatsHandler(surveyStore)
+	req := httptest.NewRequest("GET", "/stats", nil)
+	gotResRaw, err := handler(req)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+
+	gotRes := jsonMapType(gotResRaw)
+
+	if gotRes["count"] != 123.0 {
+		t.Errorf("Count: %s", gotRes["count"])
 	}
 }
