@@ -22,6 +22,8 @@ func NewStore(client *mongo.Client, dbName string) *Store {
 	}
 }
 
+var NotFoundError = errors.New("Not Found")
+
 func (s *Store) db() *mongo.Database {
 	return s.client.Database(s.dbName)
 }
@@ -46,6 +48,9 @@ func (s *Store) GetSurveyResponse(ctx context.Context, id string) (*StoredRespon
 		"_id": id,
 	})
 	if err := row.Err(); err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, NotFoundError
+		}
 		return nil, err
 	}
 	resp := &StoredResponse{}

@@ -84,7 +84,14 @@ func buildGetResponseHandler(responseStore interface {
 
 	return func(req *http.Request) (interface{}, error) {
 		responseID := mux.Vars(req)["id"]
-		return responseStore.GetSurveyResponse(req.Context(), responseID)
+		res, err := responseStore.GetSurveyResponse(req.Context(), responseID)
+		if err == surveys.NotFoundError {
+			return nil, simpleError(404, "Response Not Found")
+		} else if err != nil {
+			return nil, err
+
+		}
+		return res, nil
 	}
 }
 

@@ -187,6 +187,40 @@ func TestGetResponseHappy(t *testing.T) {
 	}
 }
 
+func TestGetResponseNotFound(t *testing.T) {
+	surveyStore := &MockStore{}
+	surveyStore.Mock.Test(t)
+	defer surveyStore.AssertExpectations(t)
+
+	surveyStore.On("GetSurveyResponse", "12345").
+		Once().
+		Return(nil, surveys.NotFoundError)
+
+	handler := buildGetResponseHandler(surveyStore)
+	req := httptest.NewRequest("GET", "/responses/12345", nil)
+	req = mux.SetURLVars(req, map[string]string{"id": "12345"})
+
+	_, err := handler(req)
+	if err == nil {
+		t.Fatal("Expected an error")
+	}
+
+	httpResp, ok := err.(HTTPResponse)
+	if !ok {
+		t.Fatalf("Bad error type: %T, %s", err, err.Error())
+	}
+
+	if httpResp.HTTPStatus() != 404 {
+		t.Fatalf("POST /responses status %d", httpResp.HTTPStatus())
+	}
+
+	gotRes := jsonMapType(httpResp.HTTPBody())
+	if gotRes["status"] != "Response Not Found" {
+		t.Errorf("Expecting Not Found error, got: %#v", gotRes)
+	}
+
+}
+
 func TestGetStatsHappy(t *testing.T) {
 	surveyStore := &MockStore{}
 	surveyStore.Mock.Test(t)
