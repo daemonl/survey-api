@@ -73,7 +73,7 @@ func buildGetResponseHandler(responseStore interface {
 }) func(req *http.Request) (interface{}, error) {
 
 	return func(req *http.Request) (interface{}, error) {
-		responseID := mux.Vars(req)["response"]
+		responseID := mux.Vars(req)["id"]
 		return responseStore.GetSurveyResponse(req.Context(), responseID)
 	}
 }
