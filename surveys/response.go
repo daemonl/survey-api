@@ -19,18 +19,18 @@ func init() {
 }
 
 type AnimalResponse struct {
-	Rating int `json:"rating"`
-	Owned  int `json:"owned"`
+	Rating int `json:"rating" bson:"rating"`
+	Owned  int `json:"owned" bson:"owned"`
 }
 
 type Response struct {
-	Animals map[string]AnimalResponse `json:"animals"`
-	Age     int                       `json:"age"`
+	Animals map[string]AnimalResponse `json:"animals" bson:"animals"`
+	Age     int                       `json:"age" bson:"age"`
 }
 
 type StoredResponse struct {
-	ID string `json:"id"`
-	Response
+	ID       string `json:"id" bson:"_id"`
+	Response `bson:",inline"`
 }
 
 func rangeError(min, max int) string {

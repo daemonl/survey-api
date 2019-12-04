@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -13,7 +14,7 @@ import (
 
 type Deps struct {
 	SurveyStore interface {
-		AddSurveyResponse(surveys.Response) (*surveys.StoredResponse, error)
+		AddSurveyResponse(context.Context, surveys.Response) (*surveys.StoredResponse, error)
 	}
 }
 
@@ -45,7 +46,7 @@ func parseRequest(req *http.Request, into interface{}) error {
 	return err
 }
 func buildAddResponseHandler(responseStore interface {
-	AddSurveyResponse(surveys.Response) (*surveys.StoredResponse, error)
+	AddSurveyResponse(context.Context, surveys.Response) (*surveys.StoredResponse, error)
 }) func(req *http.Request) (interface{}, error) {
 	return func(req *http.Request) (interface{}, error) {
 		surveyResponse := surveys.Response{}
@@ -60,7 +61,7 @@ func buildAddResponseHandler(responseStore interface {
 			}
 		}
 
-		storedResponse, err := responseStore.AddSurveyResponse(surveyResponse)
+		storedResponse, err := responseStore.AddSurveyResponse(req.Context(), surveyResponse)
 		if err != nil {
 			return nil, err
 		}

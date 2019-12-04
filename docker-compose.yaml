@@ -4,6 +4,8 @@ version: "2"
 services:
   mongo:
     image: mongo:3.4
+    ports:
+      - "27017:27017"
 
   api:
     build: 
@@ -11,6 +13,6 @@ services:
       dockerfile: Dockerfile
     environment:
       BIND: ":80"
-      MONGO: "mongodb://mongo:27017"
+      MONGO_DB_URL: "mongodb://mongo:27017"
     ports:
       - "8080:80"

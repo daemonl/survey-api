@@ -15,8 +15,9 @@ import (
 )
 
 var config struct {
-	Bind  string `env:"BIND" default:":80"`
-	Mongo string `env:"MONGO" default:"mongodb://localhost:27017"`
+	Bind      string `env:"BIND" default:":80"`
+	MongoURL  string `env:"MONGO_DB_URL" default:"mongodb://localhost:27017"`
+	MongoName string `env:"MONGO_DB_NAME" default:"surveys"`
 }
 
 func main() {
@@ -31,13 +32,13 @@ func main() {
 }
 
 func serve() error {
-	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(config.Mongo))
+	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(config.MongoURL))
 	if err != nil {
 		return err
 	}
 	defer client.Disconnect(context.TODO())
 
-	surveyStore := surveys.NewStore(client)
+	surveyStore := surveys.NewStore(client, config.MongoName)
 
 	router := api.BuildRouter(&api.Deps{
 		SurveyStore: surveyStore,

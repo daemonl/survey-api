@@ -2,6 +2,7 @@ package api
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io"
 	"net/http/httptest"
@@ -15,7 +16,7 @@ type MockStore struct {
 	mock.Mock
 }
 
-func (ms *MockStore) AddSurveyResponse(resp surveys.Response) (*surveys.StoredResponse, error) {
+func (ms *MockStore) AddSurveyResponse(ctx context.Context, resp surveys.Response) (*surveys.StoredResponse, error) {
 	args := ms.Called(resp)
 	if err := args.Error(1); err != nil {
 		return nil, err
