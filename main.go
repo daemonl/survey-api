@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/daemonl/survey-api/api"
+	"github.com/daemonl/survey-api/awssecret"
 	"github.com/daemonl/survey-api/surveys"
 
 	"go.mongodb.org/mongo-driver/mongo"
@@ -21,6 +22,7 @@ var config struct {
 }
 
 func main() {
+	awssecret.Default()
 	if err := envconf.Parse(&config); err != nil {
 		log.Fatal(err.Error())
 	}
@@ -43,5 +45,6 @@ func serve() error {
 	router := api.BuildRouter(&api.Deps{
 		SurveyStore: surveyStore,
 	})
+	log.Printf("Listening, Bound to %s", config.Bind)
 	return http.ListenAndServe(config.Bind, router)
 }
