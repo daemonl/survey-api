@@ -44,6 +44,9 @@ func BuildRouter(deps *Deps) http.Handler {
 	r.NotFoundHandler = JSONWrap(func(req *http.Request) (interface{}, error) {
 		return nil, simpleError(404, "Not Found")
 	})
+
+	r.Use(requestLogger)
+
 	return r
 }
 
