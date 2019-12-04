@@ -22,8 +22,6 @@ func NewStore(client *mongo.Client, dbName string) *Store {
 	}
 }
 
-var todo = errors.New("TODO")
-
 func (s *Store) db() *mongo.Database {
 	return s.client.Database(s.dbName)
 }
@@ -59,7 +57,13 @@ type Stats struct {
 }
 
 func (s *Store) GetStats(ctx context.Context) (*Stats, error) {
-	//row := s.db().Collection("surveys").Aggregate(ctx)
+	// Could be more interesting results like how many people like dogs
 	stats := &Stats{}
+	var err error
+	stats.Count, err = s.db().Collection("surveys").CountDocuments(ctx, bson.M{})
+	if err != nil {
+		return nil, err
+	}
+
 	return stats, nil
 }

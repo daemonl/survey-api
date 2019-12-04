@@ -29,7 +29,7 @@ func BuildRouter(deps *Deps) http.Handler {
 		),
 	)
 
-	r.Methods("GET").Path("/responses/:id").Handler(
+	r.Methods("GET").Path("/responses/{id}").Handler(
 		JSONWrap(
 			buildGetResponseHandler(deps.SurveyStore),
 		),
