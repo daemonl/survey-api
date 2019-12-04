@@ -1,4 +1,4 @@
-module github.com/daemonl/registerapi
+module github.com/daemonl/survey-api
 
 go 1.13
 

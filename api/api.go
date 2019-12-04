@@ -6,7 +6,7 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/daemonl/registerapi/surveys"
+	"github.com/daemonl/survey-api/surveys"
 	"github.com/gorilla/mux"
 )
 

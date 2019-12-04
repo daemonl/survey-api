@@ -10,7 +10,7 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"github.com/daemonl/registerapi/surveys"
+	"github.com/daemonl/survey-api/surveys"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -218,7 +218,6 @@ func TestGetResponseNotFound(t *testing.T) {
 	if gotRes["status"] != "Response Not Found" {
 		t.Errorf("Expecting Not Found error, got: %#v", gotRes)
 	}
-
 }
 
 func TestGetStatsHappy(t *testing.T) {

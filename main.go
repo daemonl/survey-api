@@ -5,8 +5,8 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/daemonl/registerapi/api"
-	"github.com/daemonl/registerapi/surveys"
+	"github.com/daemonl/survey-api/api"
+	"github.com/daemonl/survey-api/surveys"
 
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
