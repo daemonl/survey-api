@@ -10,7 +10,6 @@ Allows public users to submit and view results to a pet survey.
 
 - Submitting `age: 0` and omitting `age` is equivalent, and valid.
 - Attempting to set age to a string will throw 500.
-- There is no documentation for the expected API.
 
 ### Integration testing for the Mongo and S3 stores
 

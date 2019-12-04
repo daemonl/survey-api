@@ -1,0 +1,114 @@
+swagger: "2.0"
+info:
+  description: "Sample API for a survey on Pets"
+  version: "1.0.0"
+  title: "Pet Survey"
+host: "pets.chaos404.com"
+basePath: "/"
+consumes:
+  - "application/json"
+produces:
+  - "application/json"
+schemes:
+- "https"
+
+paths:
+  /responses:
+    post:
+      summary: "Add a new survey response"
+      operationId: "addResponse"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "body"
+        description: "Survey response object"
+        required: true
+        schema:
+          $ref: "#/definitions/SurveyResponse"
+      responses:
+        200:
+          description: "Created"
+
+  /responses/:id:
+    get:
+      summary: "Retrieve previous response"
+      operationId: "getResponse"
+      parameters:
+      - in: "path"
+        name: "id"
+        description: "Survey response ID"
+        required: true
+        type: string
+        format: uuid
+      responses:
+        200:
+          description: "The Survey Response"
+          schema:
+            $ref: "#/definitions/StoredSurveyResponse"
+        404:
+          description: "Survey not found"
+  /stats:
+    get:
+      summary: "Retrieve aggregate response data"
+      operationId: "getStats"
+      responses:
+        200:
+          description: "The Survey Stats"
+          schema:
+            $ref: "#/definitions/Stats"          
+definitions:
+  PetRating:
+    type: "object"
+    required: 
+      - rating
+      - owned
+    properties:
+      rating:
+        type: "integer"
+        minimum: 0
+        maximum: 10
+      owned:
+        type: "integer"
+        minimum: 0
+        maximum: 1000
+    
+  SurveyResponse:
+    type: "object"
+    required: 
+      - age
+      - pets
+    properties:
+      age:
+        type: "integer"
+        format: "int64"
+        minimum: 0
+        maximum: 150
+      pets:
+        type: object
+        properties: 
+          dog:   { $ref: "#/definitions/PetRating" }
+          cat:   { $ref: "#/definitions/PetRating" }
+          bird:  { $ref: "#/definitions/PetRating" }
+          horse: { $ref: "#/definitions/PetRating" }
+          snake: { $ref: "#/definitions/PetRating" }
+
+  StoredSurveyResponse:
+    type: "object"
+    allOf:
+      - $ref: "#/definitions/SurveyResponse"
+      - type: "object"
+        required: [ id ]
+        properties:
+          id: { type: "string", format: "uuid" }
+    
+  Stats:
+    type: "object"
+    required:
+      - count
+    properties:
+      count:
+        type: integer
+      
